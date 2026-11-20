@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#E8EEF9"
+    android:background="#E0E7FF"
     android:fillViewport="true">
 
     <LinearLayout
@@ -12,64 +12,76 @@
         android:orientation="vertical"
         android:padding="12dp">
 
-        <!-- شريط العنوان العلوي -->
-        <LinearLayout
+        <!-- شريط العنوان العلوي الملون -->
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingVertical="6dp">
-
-            <TextView
-                android:id="@+id/tvConnectionStatus"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="• متصل بالمايكروتك"
-                android:textColor="#15803D"
-                android:textSize="12sp"
-                android:textStyle="bold" />
+            app:cardBackgroundColor="#1E1B4B"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="4dp">
 
             <LinearLayout
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="end"
-                android:orientation="vertical">
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="12dp">
 
                 <TextView
-                    android:layout_width="wrap_content"
+                    android:id="@+id/tvConnectionStatus"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:text="يوزر منجر"
-                    android:textColor="#0F172A"
-                    android:textSize="20sp"
+                    android:layout_weight="1"
+                    android:background="#14532D"
+                    android:paddingHorizontal="10dp"
+                    android:paddingVertical="5dp"
+                    android:text="● متصل بالمايكروتك"
+                    android:textColor="#4ADE80"
+                    android:textSize="12sp"
                     android:textStyle="bold" />
 
-                <TextView
+                <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="RouterOS v6 — /tool user-manager"
-                    android:textColor="#475569"
-                    android:textSize="12sp" />
-            </LinearLayout>
+                    android:layout_marginHorizontal="10dp"
+                    android:gravity="end"
+                    android:orientation="vertical">
 
-            <ImageButton
-                android:id="@+id/btnBackUserManager"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_marginStart="8dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="رجوع"
-                android:src="@android:drawable/ic_menu_revert" />
-        </LinearLayout>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="يوزر منجر • MAG"
+                        android:textColor="#FFFFFF"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="RouterOS v6 — /tool user-manager"
+                        android:textColor="#A5B4FC"
+                        android:textSize="11sp" />
+                </LinearLayout>
+
+                <ImageButton
+                    android:id="@+id/btnBackUserManager"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="رجوع"
+                    android:src="@android:drawable/ic_menu_revert"
+                    app:tint="#FACC15" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
         <!-- تبويبات يوزر منجر -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
+            android:layout_marginTop="10dp"
             app:cardBackgroundColor="#FFFFFF"
             app:cardCornerRadius="16dp"
-            app:cardElevation="2dp">
+            app:cardElevation="3dp">
 
             <HorizontalScrollView
                 android:layout_width="match_parent"
@@ -89,38 +101,46 @@
                         android:id="@+id/btnTabSingleCard"
                         style="?attr/materialButtonOutlinedStyle"
                         android:layout_width="wrap_content"
-                        android:layout_height="40dp"
+                        android:layout_height="42dp"
                         android:text="بطاقة واحدة"
-                        android:textSize="12sp" />
+                        android:textColor="#1E293B"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
 
                     <Button
                         android:id="@+id/btnTabPrintCards"
                         style="?attr/materialButtonOutlinedStyle"
                         android:layout_width="wrap_content"
-                        android:layout_height="40dp"
+                        android:layout_height="42dp"
                         android:text="طباعة كروت"
-                        android:textSize="12sp" />
+                        android:textColor="#4F46E5"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
 
                     <Button
                         android:id="@+id/btnTabUsers"
                         style="?attr/materialButtonOutlinedStyle"
                         android:layout_width="wrap_content"
-                        android:layout_height="40dp"
+                        android:layout_height="42dp"
                         android:text="المستخدمين"
-                        android:textSize="12sp" />
+                        android:textColor="#1E293B"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
 
                     <Button
                         android:id="@+id/btnTabProfiles"
                         style="?attr/materialButtonOutlinedStyle"
                         android:layout_width="wrap_content"
-                        android:layout_height="40dp"
+                        android:layout_height="42dp"
                         android:text="الباقات"
-                        android:textSize="12sp" />
+                        android:textColor="#1E293B"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
                 </com.google.android.material.button.MaterialButtonToggleGroup>
             </HorizontalScrollView>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- أزرار القالب والنماذج وإعادة الضبط -->
+        <!-- أزرار القوالب والنماذج وإعادة الضبط الملونة -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -129,41 +149,50 @@
 
             <Button
                 android:id="@+id/btnResetTemplate"
-                style="?attr/materialButtonOutlinedStyle"
                 android:layout_width="0dp"
-                android:layout_height="44dp"
+                android:layout_height="46dp"
                 android:layout_weight="1"
+                android:backgroundTint="#E11D48"
                 android:text="إعادة الضبط"
-                android:textSize="12sp" />
+                android:textColor="#FFFFFF"
+                android:textSize="12sp"
+                android:textStyle="bold" />
 
             <Button
                 android:id="@+id/btnReadyTemplates"
-                style="?attr/materialButtonOutlinedStyle"
                 android:layout_width="0dp"
-                android:layout_height="44dp"
+                android:layout_height="46dp"
                 android:layout_marginHorizontal="6dp"
                 android:layout_weight="1"
+                android:backgroundTint="#D97706"
                 android:text="نماذج جاهزة"
-                android:textSize="12sp" />
+                android:textColor="#FFFFFF"
+                android:textSize="12sp"
+                android:textStyle="bold" />
 
             <Button
                 android:id="@+id/btnPhoneTemplate"
-                style="?attr/materialButtonOutlinedStyle"
                 android:layout_width="0dp"
-                android:layout_height="44dp"
+                android:layout_height="46dp"
                 android:layout_weight="1"
+                android:backgroundTint="#0284C7"
                 android:text="قالب من الهاتف"
-                android:textSize="12sp" />
+                android:textColor="#FFFFFF"
+                android:textSize="12sp"
+                android:textStyle="bold" />
         </LinearLayout>
 
-        <!-- معاينة الكرت -->
+        <!-- معاينة الكرت الحيّة بالباركود وال QR والسعر -->
         <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardPreviewContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
             app:cardBackgroundColor="#0F172A"
-            app:cardCornerRadius="14dp"
-            app:cardElevation="4dp">
+            app:cardCornerRadius="16dp"
+            app:cardElevation="6dp"
+            app:strokeColor="#FACC15"
+            app:strokeWidth="2dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -178,26 +207,64 @@
                     android:gravity="end"
                     android:orientation="vertical">
 
-                    <TextView
-                        android:id="@+id/tvCardNetworkTitle"
-                        android:layout_width="wrap_content"
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="بطاقة دخول الإنترنت"
-                        android:textColor="#FACC15"
-                        android:textSize="15sp"
-                        android:textStyle="bold" />
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/tvCardPriceBadge"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="#F59E0B"
+                            android:paddingHorizontal="10dp"
+                            android:paddingVertical="3dp"
+                            android:text="100"
+                            android:textColor="#0F172A"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvCardNetworkTitle"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:layout_weight="1"
+                            android:gravity="end"
+                            android:text="بطاقة دخول الإنترنت"
+                            android:textColor="#FACC15"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
 
                     <TextView
                         android:id="@+id/tvCardCodePreview"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:background="#FFFFFF"
+                        android:background="#FEF08A"
                         android:gravity="center"
                         android:padding="8dp"
-                        android:text="12345678"
+                        android:text="53846126"
                         android:textColor="#0F172A"
-                        android:textSize="18sp"
+                        android:textSize="19sp"
+                        android:textStyle="bold" />
+
+                    <!-- شريط الباركود المرئي داخل الكرت -->
+                    <TextView
+                        android:id="@+id/tvBarcodeVisual"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:background="#FFFFFF"
+                        android:gravity="center"
+                        android:letterSpacing="0.18"
+                        android:paddingHorizontal="6dp"
+                        android:paddingVertical="4dp"
+                        android:text="|| | ||| || |||| | || ||| || ||"
+                        android:textColor="#000000"
+                        android:textSize="14sp"
                         android:textStyle="bold" />
 
                     <TextView
@@ -205,34 +272,34 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
-                        android:text="الباقة: 100 • ملاحظات 1: مفعّل"
+                        android:text="الباقة: 100 • باركود مفعّل • ملاحظات 1"
                         android:textColor="#E2E8F0"
                         android:textSize="12sp" />
                 </LinearLayout>
 
                 <TextView
                     android:id="@+id/tvQrBox"
-                    android:layout_width="86dp"
-                    android:layout_height="86dp"
+                    android:layout_width="90dp"
+                    android:layout_height="112dp"
                     android:layout_marginStart="12dp"
                     android:background="#FFFFFF"
                     android:gravity="center"
                     android:padding="6dp"
-                    android:text="QR\nCODE"
+                    android:text="QR\nCODE\n[SCAN]"
                     android:textColor="#0F172A"
                     android:textSize="13sp"
                     android:textStyle="bold" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- إعدادات الكرت -->
+        <!-- إعدادات الكرت مع حقل السعر -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
             app:cardBackgroundColor="#FFFFFF"
             app:cardCornerRadius="16dp"
-            app:cardElevation="2dp">
+            app:cardElevation="3dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -243,23 +310,46 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="إعدادات الكرت"
-                    android:textColor="#0F172A"
+                    android:text="إعدادات الكرت والباركود والسعر"
+                    android:textColor="#1E1B4B"
                     android:textSize="15sp"
                     android:textStyle="bold" />
 
-                <com.google.android.material.textfield.TextInputLayout
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:hint="الباقة">
+                    android:orientation="horizontal">
 
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etPackageName"
-                        android:layout_width="match_parent"
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:text="100" />
-                </com.google.android.material.textfield.TextInputLayout>
+                        android:layout_marginEnd="6dp"
+                        android:layout_weight="1"
+                        android:hint="سعر الكرت">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etCardPrice"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="text"
+                            android:text="100" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
+                        android:layout_weight="1"
+                        android:hint="الباقة">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etPackageName"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="100" />
+                    </com.google.android.material.textfield.TextInputLayout>
+                </LinearLayout>
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -338,14 +428,14 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- مفاتيح خيارات الكرت -->
+        <!-- مفاتيح خيارات الكرت شاملة الباركود والسعر -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
             app:cardBackgroundColor="#FFFFFF"
             app:cardCornerRadius="16dp"
-            app:cardElevation="2dp">
+            app:cardElevation="3dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -354,16 +444,28 @@
                 android:padding="12dp">
 
                 <com.google.android.material.switchmaterial.SwitchMaterial
-                    android:id="@+id/swQuota"
+                    android:id="@+id/swBarcodeEnabled"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="حجم الرصيد" />
+                    android:checked="true"
+                    android:text="تفعيل الباركود و QR"
+                    android:textColor="#0F172A"
+                    android:textStyle="bold" />
 
                 <com.google.android.material.switchmaterial.SwitchMaterial
                     android:id="@+id/swPrice"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="السعر" />
+                    android:checked="true"
+                    android:text="إظهار السعر على الكرت"
+                    android:textColor="#B45309"
+                    android:textStyle="bold" />
+
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/swQuota"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="حجم الرصيد" />
 
                 <com.google.android.material.switchmaterial.SwitchMaterial
                     android:id="@+id/swComment1"
@@ -397,11 +499,11 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
-            android:background="#E0E7FF"
+            android:background="#4338CA"
             android:gravity="center"
-            android:padding="8dp"
+            android:padding="9dp"
             android:text="يمكن للصفحة أن تتسع لـ 130 بطاقة (10 أعمدة × 13 صف) • 1 صفحة"
-            android:textColor="#3730A3"
+            android:textColor="#FFFFFF"
             android:textSize="12sp"
             android:textStyle="bold" />
 
@@ -414,21 +516,23 @@
 
             <Button
                 android:id="@+id/btnPreviousFiles"
-                style="?attr/materialButtonOutlinedStyle"
                 android:layout_width="0dp"
-                android:layout_height="48dp"
+                android:layout_height="50dp"
                 android:layout_marginEnd="6dp"
                 android:layout_weight="1"
+                android:backgroundTint="#0F766E"
                 android:text="الملفات السابقة"
-                android:textSize="12sp" />
+                android:textColor="#FFFFFF"
+                android:textSize="12sp"
+                android:textStyle="bold" />
 
             <Button
                 android:id="@+id/btnSavePrint"
                 android:layout_width="0dp"
-                android:layout_height="48dp"
+                android:layout_height="50dp"
                 android:layout_marginStart="6dp"
                 android:layout_weight="1"
-                android:backgroundTint="#5B46F6"
+                android:backgroundTint="#4F46E5"
                 android:text="حفظ وطباعة"
                 android:textColor="#FFFFFF"
                 android:textSize="12sp"
@@ -437,11 +541,13 @@
 
         <Button
             android:id="@+id/btnExportRsc"
-            style="?attr/materialButtonOutlinedStyle"
             android:layout_width="match_parent"
-            android:layout_height="46dp"
+            android:layout_height="48dp"
             android:layout_marginTop="8dp"
-            android:text="&lt;&gt; تصدير سكربت (.rsc)" />
+            android:backgroundTint="#7C3AED"
+            android:text="&lt;&gt; تصدير سكربت (.rsc)"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold" />
 
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
@@ -449,7 +555,7 @@
             android:layout_marginTop="10dp"
             app:cardBackgroundColor="#FFFFFF"
             app:cardCornerRadius="14dp"
-            app:cardElevation="2dp">
+            app:cardElevation="3dp">
 
             <TextView
                 android:id="@+id/tvUmOutput"
@@ -457,7 +563,7 @@
                 android:layout_height="wrap_content"
                 android:padding="12dp"
                 android:text="جاهز لتوليد الكروت وتصدير سكربت User Manager."
-                android:textColor="#1E293B"
+                android:textColor="#0F172A"
                 android:textIsSelectable="true"
                 android:textSize="12sp" />
         </com.google.android.material.card.MaterialCardView>
