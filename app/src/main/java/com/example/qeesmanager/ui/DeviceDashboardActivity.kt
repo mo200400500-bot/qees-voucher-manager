@@ -50,17 +50,19 @@ class DeviceDashboardActivity : AppCompatActivity() {
         }
 
         binding.btnUserManager.setOnClickListener {
-            showResult(
-                "صيانة User Manager والهوت سبوت:\n" +
-                    "• مراجعة الجلسات النشطة: /ip hotspot active print\n" +
-                    "• مراجعة مستخدمي User Manager: /user-manager user print\n" +
-                    "• رابط بوابة الدخول: $baseHost"
+            startActivity(
+                Intent(this, UserManagerActivity::class.java).apply {
+                    putExtra("name", name)
+                    putExtra("host", host)
+                    putExtra("apiPort", port)
+                    putExtra("username", username)
+                }
             )
         }
 
         binding.btnTemplates.setOnClickListener {
             val templateHtml = """
-                <!-- قالب دخول Qees / MikroTik -->
+                <!-- قالب دخول MAG / MikroTik -->
                 <form action="$baseHost" method="post">
                   <input type="text" name="username" placeholder="أدخل رمز الكرت" required />
                   <button type="submit">دخول الإنترنت</button>
