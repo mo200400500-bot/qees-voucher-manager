@@ -33,7 +33,7 @@ class LoginActivity : AppCompatActivity() {
         binding.tvForgotPassword.setOnClickListener {
             Toast.makeText(
                 this,
-                "يمكنك استخدام بريدك المحفوظ على الجهاز للمتابعة مباشرة.",
+                "أدخل البريد الإلكتروني وكلمة المرور للمتابعة إلى إدارة أجهزتك.",
                 Toast.LENGTH_SHORT
             ).show()
         }

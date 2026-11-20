@@ -2,6 +2,7 @@ package com.example.qeesmanager.ui
 
 import android.content.Intent
 import android.os.Bundle
+import android.text.InputType
 import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.LinearLayout
@@ -25,12 +26,12 @@ class DevicesActivity : AppCompatActivity() {
 
         val prefs = getSharedPreferences("qees_prefs", MODE_PRIVATE)
         val email = intent.getStringExtra("email")
-            ?: prefs.getString("account_email", "mo200400500@gmail.com")
-            ?: "mo200400500@gmail.com"
-        binding.tvAccountEmail.text = email
+            ?: prefs.getString("account_email", "")
+            ?: ""
+        binding.tvAccountEmail.text = if (email.isNotBlank()) email else "حساب المستخدم"
 
         loadDevices(prefs)
-        renderDevices()
+        renderDevices(prefs)
 
         binding.btnLogout.setOnClickListener {
             prefs.edit().remove("account_email").apply()
@@ -39,25 +40,13 @@ class DevicesActivity : AppCompatActivity() {
         }
 
         binding.btnAddDevice.setOnClickListener {
-            showAddDeviceDialog(prefs)
+            showDeviceDialog(prefs, existingIndex = null)
         }
     }
 
     private fun loadDevices(prefs: android.content.SharedPreferences) {
         devices.clear()
-        val raw = prefs.getString("devices_json", null)
-        if (raw.isNullOrBlank()) {
-            devices.add(
-                JSONObject().apply {
-                    put("name", "star net")
-                    put("host", "https://l.net/login")
-                    put("apiPort", "8728")
-                    put("username", "admin")
-                }
-            )
-            saveDevices(prefs)
-            return
-        }
+        val raw = prefs.getString("devices_json", "[]").orEmpty()
         val arr = JSONArray(raw)
         for (i in 0 until arr.length()) {
             devices.add(arr.getJSONObject(i))
@@ -70,9 +59,20 @@ class DevicesActivity : AppCompatActivity() {
         prefs.edit().putString("devices_json", arr.toString()).apply()
     }
 
-    private fun renderDevices() {
+    private fun renderDevices(prefs: android.content.SharedPreferences) {
         binding.devicesContainer.removeAllViews()
-        for (device in devices) {
+
+        if (devices.isEmpty()) {
+            val emptyView = TextView(this).apply {
+                text = "لا توجد أجهزة مضافة بعد. اضغط على (+ إضافة جهاز) لإدخال بيانات الروتر."
+                textSize = 14f
+                setPadding(12, 24, 12, 12)
+            }
+            binding.devicesContainer.addView(emptyView)
+            return
+        }
+
+        devices.forEachIndexed { index, device ->
             val card = MaterialCardView(this).apply {
                 layoutParams = LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
@@ -87,14 +87,20 @@ class DevicesActivity : AppCompatActivity() {
                 setPadding(36, 32, 36, 32)
             }
 
+            val deviceName = device.optString("name", "")
+            val host = device.optString("host", "")
+            val port = device.optString("apiPort", "8728")
+            val username = device.optString("username", "")
+
             val title = TextView(this).apply {
-                text = device.optString("name", "جهاز MikroTik")
+                text = if (deviceName.isNotBlank()) deviceName else host
                 textSize = 18f
                 setTypeface(typeface, android.graphics.Typeface.BOLD)
             }
 
             val subtitle = TextView(this).apply {
-                text = "${device.optString("host")} • API: ${device.optString("apiPort", "8728")}"
+                val userPart = if (username.isNotBlank()) " • المستخدم: $username" else ""
+                text = "$host • API: $port$userPart"
                 textSize = 13f
             }
 
@@ -105,54 +111,101 @@ class DevicesActivity : AppCompatActivity() {
             card.setOnClickListener {
                 startActivity(
                     Intent(this, DeviceDashboardActivity::class.java).apply {
-                        putExtra("name", device.optString("name"))
-                        putExtra("host", device.optString("host"))
-                        putExtra("apiPort", device.optString("apiPort", "8728"))
-                        putExtra("username", device.optString("username", "admin"))
+                        putExtra("name", deviceName)
+                        putExtra("host", host)
+                        putExtra("apiPort", port)
+                        putExtra("username", username)
+                        putExtra("password", device.optString("password", ""))
                     }
                 )
+            }
+
+            card.setOnLongClickListener {
+                AlertDialog.Builder(this)
+                    .setTitle(if (deviceName.isNotBlank()) deviceName else host)
+                    .setItems(arrayOf("تعديل البيانات", "حذف الجهاز")) { _, which ->
+                        when (which) {
+                            0 -> showDeviceDialog(prefs, existingIndex = index)
+                            1 -> {
+                                devices.removeAt(index)
+                                saveDevices(prefs)
+                                renderDevices(prefs)
+                            }
+                        }
+                    }
+                    .show()
+                true
             }
 
             binding.devicesContainer.addView(card)
         }
     }
 
-    private fun showAddDeviceDialog(prefs: android.content.SharedPreferences) {
+    private fun showDeviceDialog(prefs: android.content.SharedPreferences, existingIndex: Int?) {
+        val current = existingIndex?.let { devices.getOrNull(it) }
+
         val layout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(48, 24, 48, 8)
         }
-        val etName = EditText(this).apply { hint = "اسم الجهاز (مثال: star net)" }
+
+        val etName = EditText(this).apply {
+            hint = "اسم الجهاز أو الشبكة"
+            setText(current?.optString("name", "").orEmpty())
+        }
         val etHost = EditText(this).apply {
-            hint = "عنوان الراوتر أو الهوت سبوت (مثال: https://l.net/login)"
-            setText("https://l.net/login")
+            hint = "رابط أو IP الروتر"
+            inputType = InputType.TYPE_TEXT_VARIATION_URI
+            setText(current?.optString("host", "").orEmpty())
+        }
+        val etUsername = EditText(this).apply {
+            hint = "اسم مستخدم الروتر"
+            setText(current?.optString("username", "").orEmpty())
+        }
+        val etPassword = EditText(this).apply {
+            hint = "كلمة مرور الروتر"
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+            setText(current?.optString("password", "").orEmpty())
         }
         val etPort = EditText(this).apply {
-            hint = "منفذ RouterOS API (مثال: 8728)"
-            setText("8728")
+            hint = "منفذ API (مثال: 8728)"
+            inputType = InputType.TYPE_CLASS_NUMBER
+            setText(current?.optString("apiPort", "8728").orEmpty())
         }
 
         layout.addView(etName)
         layout.addView(etHost)
+        layout.addView(etUsername)
+        layout.addView(etPassword)
         layout.addView(etPort)
 
+        val dialogTitle = if (existingIndex == null) "إضافة جهاز جديد" else "تعديل بيانات الجهاز"
+
         AlertDialog.Builder(this)
-            .setTitle("إضافة جهاز جديد")
+            .setTitle(dialogTitle)
             .setView(layout)
             .setPositiveButton("حفظ") { _, _ ->
-                val name = etName.text.toString().trim().ifEmpty { "MikroTik Device" }
-                val host = etHost.text.toString().trim().ifEmpty { "192.168.88.1" }
+                val name = etName.text.toString().trim()
+                val host = etHost.text.toString().trim()
+                val username = etUsername.text.toString().trim()
+                val password = etPassword.text.toString()
                 val port = etPort.text.toString().trim().ifEmpty { "8728" }
-                devices.add(
-                    JSONObject().apply {
-                        put("name", name)
-                        put("host", host)
-                        put("apiPort", port)
-                        put("username", "admin")
-                    }
-                )
+
+                val obj = JSONObject().apply {
+                    put("name", name)
+                    put("host", host)
+                    put("username", username)
+                    put("password", password)
+                    put("apiPort", port)
+                }
+
+                if (existingIndex != null && existingIndex in devices.indices) {
+                    devices[existingIndex] = obj
+                } else {
+                    devices.add(obj)
+                }
                 saveDevices(prefs)
-                renderDevices()
+                renderDevices(prefs)
             }
             .setNegativeButton("إلغاء", null)
             .show()

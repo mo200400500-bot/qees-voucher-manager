@@ -20,26 +20,30 @@ class DeviceDashboardActivity : AppCompatActivity() {
         binding = ActivityDeviceDashboardBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val name = intent.getStringExtra("name") ?: "star net"
-        val host = intent.getStringExtra("host") ?: "https://l.net/login"
-        val port = intent.getStringExtra("apiPort") ?: "8728"
+        val name = intent.getStringExtra("name").orEmpty()
+        val host = intent.getStringExtra("host").orEmpty()
+        val port = intent.getStringExtra("apiPort").orEmpty().ifEmpty { "8728" }
+        val username = intent.getStringExtra("username").orEmpty()
 
-        binding.tvDeviceTitle.text = name
-        binding.tvDeviceMeta.text = "$host • API: $port"
+        binding.tvDeviceTitle.text = if (name.isNotBlank()) name else "جهاز MikroTik"
+        binding.tvDeviceMeta.text = if (host.isNotBlank()) "$host • API: $port" else "API: $port"
+
+        val baseHost = if (host.isNotBlank()) host else "[رابط الروتر]"
 
         binding.btnPrintBarcode.setOnClickListener {
             val batch = (1..6).joinToString("\n") { idx ->
                 val code = UUID.randomUUID().toString().take(8).uppercase()
-                "كرت #$idx | كود: $code | QR: $host?username=$code"
+                "كرت #$idx | كود: $code | QR: $baseHost?username=$code"
             }
             showResult("دفعة كروت جاهزة للطباعة والباركود:\n\n$batch")
         }
 
         binding.btnMikrotikMaintenance.setOnClickListener {
+            val userLine = if (username.isNotBlank()) "\n• اسم المستخدم: $username" else ""
             showResult(
-                "أدوات صيانة المايكروتك ($name):\n" +
-                    "• العنوان: $host\n" +
-                    "• منفذ API: $port\n" +
+                "أدوات صيانة المايكروتك:\n" +
+                    "• العنوان: $baseHost\n" +
+                    "• منفذ API: $port$userLine\n" +
                     "• فحص الخدمات: /ip service print\n" +
                     "• فحص الذاكرة والمعالج: /system resource print"
             )
@@ -47,17 +51,17 @@ class DeviceDashboardActivity : AppCompatActivity() {
 
         binding.btnUserManager.setOnClickListener {
             showResult(
-                "صيانة User Manager والهوت سبوت ($name):\n" +
+                "صيانة User Manager والهوت سبوت:\n" +
                     "• مراجعة الجلسات النشطة: /ip hotspot active print\n" +
                     "• مراجعة مستخدمي User Manager: /user-manager user print\n" +
-                    "• رابط بوابة الدخول: $host"
+                    "• رابط بوابة الدخول: $baseHost"
             )
         }
 
         binding.btnTemplates.setOnClickListener {
             val templateHtml = """
                 <!-- قالب دخول Qees / MikroTik -->
-                <form action="$host" method="post">
+                <form action="$baseHost" method="post">
                   <input type="text" name="username" placeholder="أدخل رمز الكرت" required />
                   <button type="submit">دخول الإنترنت</button>
                 </form>
