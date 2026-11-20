@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/tvTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="مدير الكروت - Qees Manager"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="12dp" />
+
+    <EditText
+        android:id="@+id/etVoucherCode"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="أدخل رمز الكرت"
+        android:inputType="text"
+        android:layout_marginBottom="8dp" />
+
+    <EditText
+        android:id="@+id/etLoginUrl"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="http://192.168.1.1/login"
+        android:hint="رابط صفحة الدخول (مثل http://l.net/login)"
+        android:inputType="textUri"
+        android:layout_marginBottom="12dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="12dp">
+
+        <Button
+            android:id="@+id/btnSaveAndConnect"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="حفظ ودخول"
+            android:layout_marginEnd="6dp" />
+
+        <Button
+            android:id="@+id/btnDeleteExpired"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="حذف المنتهية"
+            android:layout_marginStart="6dp" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/tvStats"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="الكروت الفعالة: 0 | الكروت المنتهية: 0"
+        android:layout_marginBottom="8dp" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <TextView
+            android:id="@+id/tvVouchersList"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="لا توجد كروت محفوظة بعد."
+            android:textSize="15sp" />
+    </ScrollView>
+
+</LinearLayout>
