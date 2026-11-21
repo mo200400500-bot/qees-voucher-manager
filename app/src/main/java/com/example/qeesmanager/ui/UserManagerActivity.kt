@@ -286,13 +286,15 @@ class UserManagerActivity : AppCompatActivity() {
                     }
                 }
 
-                val profileNames = profilesRes?.rows?.mapNotNull { row ->
-                    row["name"] ?: row["profile"]
-                }?.filter { it.isNotBlank() }?.distinct().orEmpty()
+                val profileNames = extractFieldValues(
+                    profilesRes?.rawOutput.orEmpty(),
+                    listOf("name", "profile")
+                )
 
-                val customerNames = customersRes?.rows?.mapNotNull { row ->
-                    row["name"] ?: row["login"]
-                }?.filter { it.isNotBlank() }?.distinct().orEmpty()
+                val customerNames = extractFieldValues(
+                    customersRes?.rawOutput.orEmpty(),
+                    listOf("name", "login")
+                )
 
                 SyncSummary(
                     basePath = chosenBase,
@@ -391,6 +393,21 @@ class UserManagerActivity : AppCompatActivity() {
                 "$baseSummary\n\nتم رفع $addedCount من ${codes.size} كرت قبل توقف الإرسال:\nالسبب: $lastError"
             }
         }
+    }
+
+    private fun extractFieldValues(lines: List<String>, keys: List<String>): List<String> {
+        return lines.flatMap { line ->
+            line.split(" | ").mapNotNull { part ->
+                val eqIdx = part.indexOf('=')
+                if (eqIdx > 0) {
+                    val k = part.substring(0, eqIdx).trim()
+                    val v = part.substring(eqIdx + 1).trim()
+                    if (k in keys && v.isNotBlank()) v else null
+                } else {
+                    null
+                }
+            }
+        }.distinct()
     }
 
     private data class SyncSummary(
