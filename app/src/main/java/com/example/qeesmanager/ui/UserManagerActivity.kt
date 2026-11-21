@@ -18,9 +18,14 @@ import android.text.TextWatcher
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
+import androidx.lifecycle.lifecycleScope
 import com.example.qeesmanager.R
 import com.example.qeesmanager.databinding.ActivityUserManagerBinding
+import com.example.qeesmanager.network.RouterOsApiClient
 import com.example.qeesmanager.util.VoucherVisualGenerator
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.FileOutputStream
 import java.util.Locale
 import kotlin.random.Random
@@ -38,8 +43,10 @@ class UserManagerActivity : AppCompatActivity() {
 
         val deviceName = intent.getStringExtra("name").orEmpty()
         val host = intent.getStringExtra("host").orEmpty()
-        val apiPort = intent.getStringExtra("apiPort").orEmpty().ifEmpty { "8728" }
+        val apiPortStr = intent.getStringExtra("apiPort").orEmpty().ifEmpty { "8728" }
+        val apiPort = apiPortStr.toIntOrNull() ?: 8728
         val username = intent.getStringExtra("username").orEmpty()
+        val password = intent.getStringExtra("password").orEmpty()
 
         binding.tvConnectionStatus.text = if (host.isNotBlank()) {
             "• متصل بالمايكروتك ($host:$apiPort)"
@@ -157,6 +164,7 @@ class UserManagerActivity : AppCompatActivity() {
             val count = binding.etCardsCount.text?.toString()?.trim()?.toIntOrNull()?.coerceIn(1, 130) ?: 1
             val length = binding.etCodeLength.text?.toString()?.trim()?.toIntOrNull()?.coerceIn(6, 20) ?: 12
             val codeType = binding.etCodeType.text?.toString()?.trim().orEmpty()
+            val passwordMode = binding.etPasswordMode.text?.toString()?.trim().orEmpty()
             val pkg = binding.etPackageName.text?.toString()?.trim().orEmpty().ifBlank { "100" }
             val price = binding.etCardPrice.text?.toString()?.trim().orEmpty().ifBlank { "1" }
             val pos = binding.etPointOfSale.text?.toString()?.trim().orEmpty()
@@ -185,6 +193,22 @@ class UserManagerActivity : AppCompatActivity() {
                 includeComment1 = binding.swComment1.isChecked
             )
             printBitmapDirectlyInApp("MAG_Vouchers_${System.currentTimeMillis()}", sheetBitmap)
+
+            if (host.isNotBlank() && username.isNotBlank()) {
+                uploadCardsToUserManager(
+                    host = host,
+                    port = apiPort,
+                    username = username,
+                    password = password,
+                    codes = codes,
+                    groupName = pkg,
+                    passwordMode = passwordMode,
+                    comment = pos,
+                    baseSummary = summary
+                )
+            } else {
+                binding.tvUmOutput.text = "$summary\n\nملاحظة: لم يتم الإرسال لليوزر منجر لعدم توفر عنوان/مستخدم الراوتر."
+            }
         }
 
         binding.btnPreviousFiles.setOnClickListener {
@@ -214,10 +238,72 @@ class UserManagerActivity : AppCompatActivity() {
             }.trim()
 
             copyText("سكربت RouterOS (.rsc)", rscScript)
-            binding.tvUmOutput.text = "تم تجهيز سكربت (.rsc) ونسخه إلى الحافظة (اختياري لإدخاله للراوتر):\n\n$rscScript"
+            binding.tvUmOutput.text = "تم تجهيز سكربت (.rsc) ونسخه إلى الحافظة:\n\n$rscScript"
         }
 
         updatePreview()
+    }
+
+    private fun uploadCardsToUserManager(
+        host: String,
+        port: Int,
+        username: String,
+        password: String,
+        codes: List<String>,
+        groupName: String,
+        passwordMode: String,
+        comment: String,
+        baseSummary: String
+    ) {
+        binding.tvUmOutput.text = "$baseSummary\n\nجاري رفع ${codes.size} كرت تلقائياً إلى User Manager ($host:$port)..."
+
+        lifecycleScope.launch {
+            val client = RouterOsApiClient(host = host, port = port)
+            val result = withContext(Dispatchers.IO) {
+                var addedCount = 0
+                var lastError: String? = null
+                val useSamePassword = !passwordMode.contains("بدون", ignoreCase = true) &&
+                    !passwordMode.contains("none", ignoreCase = true) &&
+                    passwordMode.isNotBlank()
+
+                for (code in codes) {
+                    val cmd = buildList {
+                        add("/tool/user-manager/user/add")
+                        add("=name=$code")
+                        if (useSamePassword) {
+                            add("=password=$code")
+                        }
+                        if (groupName.isNotBlank()) {
+                            add("=group=$groupName")
+                        }
+                        if (comment.isNotBlank()) {
+                            add("=comment=$comment")
+                        }
+                    }
+                    val res = client.executeCommand(
+                        username = username,
+                        password = password,
+                        commandWords = cmd
+                    )
+                    if (res.success) {
+                        addedCount++
+                    } else {
+                        lastError = res.message
+                        break
+                    }
+                }
+                Pair(addedCount, lastError)
+            }
+
+            val addedCount = result.first
+            val lastError = result.second
+
+            binding.tvUmOutput.text = if (lastError == null) {
+                "$baseSummary\n\nتم رفع $addedCount من ${codes.size} كرت تلقائياً إلى User Manager بنجاح."
+            } else {
+                "$baseSummary\n\nتم رفع $addedCount من ${codes.size} كرت قبل توقف الإرسال:\nالسبب: $lastError"
+            }
+        }
     }
 
     private fun updatePreview() {
