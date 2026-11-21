@@ -10,7 +10,7 @@ import java.security.MessageDigest
 class RouterOsApiClient(
     private val host: String,
     private val port: Int,
-    private val timeoutMs: Int
+    private val timeoutMs: Int = 7000
 ) {
 
     data class ApiResult(
@@ -153,7 +153,8 @@ class RouterOsApiClient(
             val output = DataOutputStream(socket.getOutputStream())
 
             sendSentence(output, listOf("/login", "=name=$username", "=password=$password"))
-            val firstLoginReply = readSentence(input) ?: return ApiResult(false, "تم قطع الاتصال أثناء المصادقة.")
+            val firstLoginReply = readSentence(input)
+                ?: return ApiResult(false, "تم قطع الاتصال أثناء المصادقة.")
 
             var authenticated = false
             var challengeHex: String? = null
@@ -164,7 +165,8 @@ class RouterOsApiClient(
                 } else if (word.startsWith("=ret=")) {
                     challengeHex = word.removePrefix("=ret=")
                 } else if (word == "!trap") {
-                    val reason = firstLoginReply.firstOrNull { it.startsWith("=message=") }?.removePrefix("=message=")
+                    val reason = firstLoginReply.firstOrNull { it.startsWith("=message=") }
+                        ?.removePrefix("=message=")
                     if (reason != null && challengeHex == null) {
                         return ApiResult(false, "فشل تسجيل الدخول إلى RouterOS: $reason")
                     }
@@ -179,7 +181,8 @@ class RouterOsApiClient(
                 val responseHex = "00" + md5Hex(md.digest())
 
                 sendSentence(output, listOf("/login", "=name=$username", "=response=$responseHex"))
-                val secondLoginReply = readSentence(input) ?: return ApiResult(false, "فشل إتمام تحدي الدخول.")
+                val secondLoginReply = readSentence(input)
+                    ?: return ApiResult(false, "فشل إتمام تحدي الدخول.")
                 if (!secondLoginReply.contains("!done")) {
                     val trapMsg = secondLoginReply.firstOrNull { it.startsWith("=message=") }
                         ?.removePrefix("=message=") ?: "بيانات الدخول غير صحيحة"
@@ -228,7 +231,10 @@ class RouterOsApiClient(
                 ApiResult(true, "تم الاتصال والمصادقة وتنفيذ الأمر بنجاح على $targetHost:$port", rows)
             }
         } catch (e: Exception) {
-            ApiResult(false, "تعذر الاتصال الحقيقي بـ $targetHost:$port — ${e.localizedMessage ?: e.javaClass.simpleName}")
+            ApiResult(
+                false,
+                "تعذر الاتصال الحقيقي بـ $targetHost:$port — ${e.localizedMessage ?: e.javaClass.simpleName}"
+            )
         } finally {
             try {
                 socket.close()
