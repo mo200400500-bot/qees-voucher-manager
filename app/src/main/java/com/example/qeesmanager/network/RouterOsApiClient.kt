@@ -16,7 +16,7 @@ class RouterOsApiClient(
     data class ApiResult(
         val success: Boolean,
         val message: String,
-        val rawSentences: List> = emptyList()
+        val rawOutput: List<String> = emptyList()
     )
 
     private fun cleanHost(raw: String): String {
@@ -89,7 +89,9 @@ class RouterOsApiClient(
     }
 
     private fun sendSentence(out: DataOutputStream, words: List<String>) {
-        for (w in words) { sendWord(out, w) }
+        for (w in words) {
+            sendWord(out, w)
+        }
         out.write(0)
         out.flush()
     }
@@ -141,75 +143,93 @@ class RouterOsApiClient(
         if (targetHost.isBlank()) {
             return ApiResult(false, "Router host/IP is empty.")
         }
+
         val socket = Socket()
         return try {
             socket.soTimeout = timeoutMs
             socket.connect(InetSocketAddress(targetHost, port), timeoutMs)
+
             val input = DataInputStream(socket.getInputStream())
             val output = DataOutputStream(socket.getOutputStream())
+
             sendSentence(output, listOf("/login", "=name=$username", "=password=$password"))
-            val firstLoginReply = readSentence(input) ?: return ApiResult(false, "Connection closed during login.")
+            val firstLoginReply = readSentence(input)
+                ?: return ApiResult(false, "Connection closed during login.")
+
             var authenticated = false
             var challengeHex: String? = null
+
             for (word in firstLoginReply) {
                 if (word == "!done") {
                     authenticated = true
                 } else if (word.startsWith("=ret=")) {
                     challengeHex = word.removePrefix("=ret=")
                 } else if (word == "!trap") {
-                    val reason = firstLoginReply.firstOrNull { it.startsWith("=message=") }?.removePrefix("=message=")
+                    val reason = firstLoginReply.firstOrNull { it.startsWith("=message=") }
+                        ?.removePrefix("=message=")
                     if (reason != null && challengeHex == null) {
                         return ApiResult(false, "RouterOS login failed: $reason")
                     }
                 }
             }
+
             if (!authenticated && challengeHex != null) {
                 val md = MessageDigest.getInstance("MD5")
                 md.update(0.toByte())
                 md.update(password.toByteArray(Charsets.ISO_8859_1))
                 md.update(hexToBytes(challengeHex))
                 val responseHex = "00" + md5Hex(md.digest())
+
                 sendSentence(output, listOf("/login", "=name=$username", "=response=$responseHex"))
-                val secondLoginReply = readSentence(input) ?: return ApiResult(false, "Challenge response failed.")
+                val secondLoginReply = readSentence(input)
+                    ?: return ApiResult(false, "Challenge response failed.")
                 if (!secondLoginReply.contains("!done")) {
-                    val trapMsg = secondLoginReply.firstOrNull { it.startsWith("=message=") }?.removePrefix("=message=") ?: "Invalid credentials"
+                    val trapMsg = secondLoginReply.firstOrNull { it.startsWith("=message=") }
+                        ?.removePrefix("=message=") ?: "Invalid credentials"
                     return ApiResult(false, "Login failed: $trapMsg")
                 }
                 authenticated = true
             }
+
             if (!authenticated) {
                 return ApiResult(false, "Authentication failed on port $port.")
             }
+
             sendSentence(output, commandWords)
-            val rows = mutableListOf>()
+            val linesOut = mutableListOf<String>()
             var errorMessage: String? = null
+
             while (true) {
                 val sentence = readSentence(input) ?: break
-                if (sentence.contains("!done")) break
+                if (sentence.contains("!done")) {
+                    break
+                }
                 if (sentence.contains("!trap") || sentence.contains("!fatal")) {
-                    errorMessage = sentence.firstOrNull { it.startsWith("=message=") }?.removePrefix("=message=") ?: "Command rejected by router"
+                    errorMessage = sentence.firstOrNull { it.startsWith("=message=") }
+                        ?.removePrefix("=message=") ?: "Command rejected by router"
                     break
                 }
                 if (sentence.contains("!re")) {
-                    val map = linkedMapOf<String, String>()
-                    for (w in sentence) {
-                        if (w.startsWith("=") && w.indexOf("=", 1) > 1) {
-                            val eqIndex = w.indexOf("=", 1)
-                            val key = w.substring(1, eqIndex)
-                            val valStr = w.substring(eqIndex + 1)
-                            map[key] = valStr
-                        }
+                    val fields = sentence.filter { it.startsWith("=") }.map { it.removePrefix("=") }
+                    if (fields.isNotEmpty()) {
+                        linesOut.add(fields.joinToString(" | "))
                     }
-                    if (map.isNotEmpty()) rows.add(map)
                 }
             }
-            if (errorMessage != null) ApiResult(false, "RouterOS error: $errorMessage", rows)
-            else ApiResult(true, "Connected and executed on $targetHost:$port", rows)
+
+            if (errorMessage != null) {
+                ApiResult(false, "RouterOS error: $errorMessage", linesOut)
+            } else {
+                ApiResult(true, "Connected and executed on $targetHost:$port", linesOut)
+            }
         } catch (e: Exception) {
             val detail = e.localizedMessage ?: e.javaClass.simpleName
             ApiResult(false, "Failed to connect to $targetHost:$port - $detail")
         } finally {
-            try { socket.close() } catch (_: Exception) {}
+            try {
+                socket.close()
+            } catch (ignored: Exception) {
+            }
         }
     }
 }
