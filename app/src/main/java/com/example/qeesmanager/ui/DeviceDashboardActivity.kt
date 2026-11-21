@@ -56,7 +56,7 @@ class DeviceDashboardActivity : AppCompatActivity() {
             showResult("جاري الاتصال الحقيقي بـ $host على المنفذ $port عبر RouterOS API...")
 
             lifecycleScope.launch {
-                val client = RouterOsApiClient(host = host, port = port, timeoutMs = 7000)
+                val client = RouterOsApiClient(host = host, port = port)
                 val res = withContext(Dispatchers.IO) {
                     client.executeCommand(
                         username = username,
@@ -70,8 +70,9 @@ class DeviceDashboardActivity : AppCompatActivity() {
                     return@launch
                 }
 
-                val info = res.rawSentences.firstOrNull()?.entries
-                    ?.joinToString("\n") { "• ${it.key}: ${it.value}" }
+                val info = res.rawOutput.firstOrNull()
+                    ?.split(" | ")
+                    ?.joinToString("\n") { "• $it" }
                     ?: "تم الدخول بنجاح ولم تُعد بيانات إضافية."
 
                 showResult("${res.message}\n\n$info")
