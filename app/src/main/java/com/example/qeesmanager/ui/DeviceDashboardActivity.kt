@@ -56,7 +56,7 @@ class DeviceDashboardActivity : AppCompatActivity() {
             showResult("جاري الاتصال الحقيقي بـ $host على المنفذ $port عبر RouterOS API...")
 
             lifecycleScope.launch {
-                val client = RouterOsApiClient(host = host, port = port)
+                val client = RouterOsApiClient(host = host, port = port, timeoutMs = 7000)
                 val res = withContext(Dispatchers.IO) {
                     client.executeCommand(
                         username = username,

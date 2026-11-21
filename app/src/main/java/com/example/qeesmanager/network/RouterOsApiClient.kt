@@ -10,7 +10,7 @@ import java.security.MessageDigest
 class RouterOsApiClient(
     private val host: String,
     private val port: Int,
-    private val timeoutMs: Int = 7000
+    private val timeoutMs: Int
 ) {
 
     data class ApiResult(
@@ -152,7 +152,6 @@ class RouterOsApiClient(
             val input = DataInputStream(socket.getInputStream())
             val output = DataOutputStream(socket.getOutputStream())
 
-            // محاولة مصادقة RouterOS v6.43+ (/login بالاسم وكلمة المرور مباشرة)
             sendSentence(output, listOf("/login", "=name=$username", "=password=$password"))
             val firstLoginReply = readSentence(input) ?: return ApiResult(false, "تم قطع الاتصال أثناء المصادقة.")
 
@@ -172,7 +171,6 @@ class RouterOsApiClient(
                 }
             }
 
-            // التوافق مع RouterOS الأقدم عبر تحدي MD5 إذا أعاد الراوتر =ret=
             if (!authenticated && challengeHex != null) {
                 val md = MessageDigest.getInstance("MD5")
                 md.update(0.toByte())
