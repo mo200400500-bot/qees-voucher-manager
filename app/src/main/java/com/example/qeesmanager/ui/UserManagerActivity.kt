@@ -201,7 +201,6 @@ class UserManagerActivity : AppCompatActivity() {
                     username = username,
                     password = password,
                     codes = codes,
-                    groupName = pkg,
                     passwordMode = passwordMode,
                     comment = pos,
                     baseSummary = summary
@@ -233,7 +232,7 @@ class UserManagerActivity : AppCompatActivity() {
             val rscScript = buildString {
                 appendLine("# MAG RouterOS / User-Manager Script")
                 codes.forEach { code ->
-                    appendLine("/tool user-manager user add name=\"$code\" password=\"\" group=\"$pkg\"")
+                    appendLine("/tool user-manager user add name=\"$code\" password=\"\" comment=\"$pkg\"")
                 }
             }.trim()
 
@@ -250,7 +249,6 @@ class UserManagerActivity : AppCompatActivity() {
         username: String,
         password: String,
         codes: List<String>,
-        groupName: String,
         passwordMode: String,
         comment: String,
         baseSummary: String
@@ -272,9 +270,6 @@ class UserManagerActivity : AppCompatActivity() {
                         add("=name=$code")
                         if (useSamePassword) {
                             add("=password=$code")
-                        }
-                        if (groupName.isNotBlank()) {
-                            add("=group=$groupName")
                         }
                         if (comment.isNotBlank()) {
                             add("=comment=$comment")
