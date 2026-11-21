@@ -35,6 +35,9 @@ class UserManagerActivity : AppCompatActivity() {
     private lateinit var binding: ActivityUserManagerBinding
     private val savedBatches = mutableListOf<String>()
     private var lastGeneratedCodes: List<String> = emptyList()
+    private var detectedProfiles: List<String> = emptyList()
+    private var detectedCustomers: List<String> = emptyList()
+    private var detectedUmBasePath: String = "/user-manager"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -71,17 +74,21 @@ class UserManagerActivity : AppCompatActivity() {
                 R.id.btnTabUsers -> {
                     binding.tvUmOutput.text = buildString {
                         appendLine("إدارة مستخدمي يوزر منجر (${deviceName.ifBlank { "الجهاز" }}):")
-                        appendLine("• المستخدم الإداري: ${username.ifBlank { "غير محدد" }}")
+                        appendLine("• مسار User Manager المكتشف: $detectedUmBasePath")
+                        appendLine("• العملاء المكتشفون: ${if (detectedCustomers.isEmpty()) "لا يوجد" else detectedCustomers.joinToString(", ")}")
+                        appendLine("• الباقات المكتشفة: ${if (detectedProfiles.isEmpty()) "لا يوجد" else detectedProfiles.joinToString(", ")}")
                         appendLine("• عدد الدفعات المحفوظة في هذه الجلسة: ${savedBatches.size}")
-                        if (lastGeneratedCodes.isNotEmpty()) {
-                            appendLine("• آخر الأكواد المولّدة: ${lastGeneratedCodes.take(5).joinToString(", ")}")
-                        }
                     }.trim()
                 }
                 R.id.btnTabProfiles -> {
                     val pkg = binding.etPackageName.text?.toString()?.trim().orEmpty().ifBlank { "100" }
                     val price = binding.etCardPrice.text?.toString()?.trim().orEmpty().ifBlank { "1" }
-                    binding.tvUmOutput.text = "الباقة الحالية: $pkg | السعر: $price | منفذ API: $apiPort"
+                    binding.tvUmOutput.text = buildString {
+                        appendLine("الباقة الحالية: $pkg | السعر: $price | منفذ API: $apiPort")
+                        if (detectedProfiles.isNotEmpty()) {
+                            appendLine("الباقات المتوفرة في الراوتر: ${detectedProfiles.joinToString(" • ")}")
+                        }
+                    }.trim()
                 }
             }
         }
@@ -118,7 +125,11 @@ class UserManagerActivity : AppCompatActivity() {
 
         binding.btnResetTemplate.setOnClickListener {
             binding.etCardPrice.setText("1")
-            binding.etPackageName.setText("100")
+            if (detectedProfiles.isNotEmpty()) {
+                binding.etPackageName.setText(detectedProfiles.first())
+            } else {
+                binding.etPackageName.setText("100")
+            }
             binding.etCodeLength.setText("12")
             binding.etCodeType.setText("أرقام")
             binding.etPasswordMode.setText("بدون")
@@ -137,14 +148,18 @@ class UserManagerActivity : AppCompatActivity() {
 
         binding.btnReadyTemplates.setOnClickListener {
             binding.etCardPrice.setText("5")
-            binding.etPackageName.setText("يومي مفتوح")
+            if (detectedProfiles.isNotEmpty()) {
+                binding.etPackageName.setText(detectedProfiles.first())
+            } else {
+                binding.etPackageName.setText("يومي مفتوح")
+            }
             binding.etCodeLength.setText("10")
             binding.etCodeType.setText("أرقام")
             binding.etCardsCount.setText("10")
             binding.swBarcodeEnabled.isChecked = true
             binding.swPrice.isChecked = true
             updatePreview()
-            binding.tvUmOutput.text = "تم تطبيق نموذج جاهز (10 كروت • باقة يومي مفتوح • باركود و QR مفعل)."
+            binding.tvUmOutput.text = "تم تطبيق نموذج جاهز (10 كروت • باركود و QR مفعل)."
         }
 
         binding.btnPhoneTemplate.setOnClickListener {
@@ -165,7 +180,9 @@ class UserManagerActivity : AppCompatActivity() {
             val length = binding.etCodeLength.text?.toString()?.trim()?.toIntOrNull()?.coerceIn(6, 20) ?: 12
             val codeType = binding.etCodeType.text?.toString()?.trim().orEmpty()
             val passwordMode = binding.etPasswordMode.text?.toString()?.trim().orEmpty()
-            val pkg = binding.etPackageName.text?.toString()?.trim().orEmpty().ifBlank { "100" }
+            val pkg = binding.etPackageName.text?.toString()?.trim().orEmpty().ifBlank {
+                detectedProfiles.firstOrNull() ?: "100"
+            }
             val price = binding.etCardPrice.text?.toString()?.trim().orEmpty().ifBlank { "1" }
             val pos = binding.etPointOfSale.text?.toString()?.trim().orEmpty()
 
@@ -201,6 +218,7 @@ class UserManagerActivity : AppCompatActivity() {
                     username = username,
                     password = password,
                     codes = codes,
+                    profileName = pkg,
                     passwordMode = passwordMode,
                     comment = pos,
                     baseSummary = summary
@@ -232,7 +250,7 @@ class UserManagerActivity : AppCompatActivity() {
             val rscScript = buildString {
                 appendLine("# MAG RouterOS / User-Manager Script")
                 codes.forEach { code ->
-                    appendLine("/tool user-manager user add name=\"$code\" password=\"\" comment=\"$pkg\"")
+                    appendLine("$detectedUmBasePath/user/add name=\"$code\" password=\"\" comment=\"$pkg\"")
                 }
             }.trim()
 
@@ -241,6 +259,69 @@ class UserManagerActivity : AppCompatActivity() {
         }
 
         updatePreview()
+
+        if (host.isNotBlank() && username.isNotBlank()) {
+            syncUserManagerMetadata(host, apiPort, username, password)
+        }
+    }
+
+    private fun syncUserManagerMetadata(host: String, port: Int, username: String, password: String) {
+        binding.tvUmOutput.text = "جاري فحص بيانات User Manager والباقات من الراوتر ($host:$port)..."
+
+        lifecycleScope.launch {
+            val report = withContext(Dispatchers.IO) {
+                val client = RouterOsApiClient(host = host, port = port)
+                val baseCandidates = listOf("/user-manager", "/tool/user-manager")
+                var chosenBase = "/user-manager"
+                var profilesRes: RouterOsApiClient.ApiResult? = null
+                var customersRes: RouterOsApiClient.ApiResult? = null
+
+                for (base in baseCandidates) {
+                    val pRes = client.executeCommand(username, password, listOf("$base/profile/print"))
+                    if (pRes.success) {
+                        chosenBase = base
+                        profilesRes = pRes
+                        customersRes = client.executeCommand(username, password, listOf("$base/customer/print"))
+                        break
+                    }
+                }
+
+                val profileNames = profilesRes?.rows?.mapNotNull { row ->
+                    row["name"] ?: row["profile"]
+                }?.filter { it.isNotBlank() }?.distinct().orEmpty()
+
+                val customerNames = customersRes?.rows?.mapNotNull { row ->
+                    row["name"] ?: row["login"]
+                }?.filter { it.isNotBlank() }?.distinct().orEmpty()
+
+                SyncSummary(
+                    basePath = chosenBase,
+                    profiles = profileNames,
+                    customers = customerNames,
+                    connected = profilesRes?.success == true
+                )
+            }
+
+            detectedUmBasePath = report.basePath
+            detectedProfiles = report.profiles
+            detectedCustomers = report.customers
+
+            if (report.connected) {
+                if (report.profiles.isNotEmpty() && binding.etPackageName.text?.toString()?.trim().isNullOrEmpty()) {
+                    binding.etPackageName.setText(report.profiles.first())
+                }
+                binding.tvConnectionStatus.text = "• متصل بـ User Manager ($host:$port)"
+                binding.tvUmOutput.text = buildString {
+                    appendLine("تم الربط وفحص بيانات User Manager بنجاح:")
+                    appendLine("• المسار: ${report.basePath}")
+                    appendLine("• العملاء: ${if (report.customers.isEmpty()) "افتراضي/غير معروض" else report.customers.joinToString(", ")}")
+                    appendLine("• الباقات المتوفرة: ${if (report.profiles.isEmpty()) "لا توجد باقات معرّفة" else report.profiles.joinToString(", ")}")
+                }.trim()
+                updatePreview()
+            } else {
+                binding.tvUmOutput.text = "تنبيه: تعذر قراءة جدول الباقات من User Manager تلقائياً. يمكنك متابعة الطباعة أو تجربة تصدير السكربت."
+            }
+        }
     }
 
     private fun uploadCardsToUserManager(
@@ -249,6 +330,7 @@ class UserManagerActivity : AppCompatActivity() {
         username: String,
         password: String,
         codes: List<String>,
+        profileName: String,
         passwordMode: String,
         comment: String,
         baseSummary: String
@@ -264,17 +346,27 @@ class UserManagerActivity : AppCompatActivity() {
                     !passwordMode.contains("none", ignoreCase = true) &&
                     passwordMode.isNotBlank()
 
+                val customerArg = detectedCustomers.firstOrNull()
+                val profileArg = if (detectedProfiles.contains(profileName)) profileName else null
+
                 for (code in codes) {
                     val cmd = buildList {
-                        add("/tool/user-manager/user/add")
+                        add("$detectedUmBasePath/user/add")
                         add("=name=$code")
                         if (useSamePassword) {
                             add("=password=$code")
+                        }
+                        if (!customerArg.isNullOrBlank()) {
+                            add("=customer=$customerArg")
+                        }
+                        if (!profileArg.isNullOrBlank()) {
+                            add("=profile=$profileArg")
                         }
                         if (comment.isNotBlank()) {
                             add("=comment=$comment")
                         }
                     }
+
                     val res = client.executeCommand(
                         username = username,
                         password = password,
@@ -300,6 +392,13 @@ class UserManagerActivity : AppCompatActivity() {
             }
         }
     }
+
+    private data class SyncSummary(
+        val basePath: String,
+        val profiles: List<String>,
+        val customers: List<String>,
+        val connected: Boolean
+    )
 
     private fun updatePreview() {
         val pkg = binding.etPackageName.text?.toString()?.trim().orEmpty().ifBlank { "100" }
